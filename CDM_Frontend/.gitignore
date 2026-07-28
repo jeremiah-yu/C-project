@@ -3,3 +3,9 @@ dist/
 release/
 *.log
 .vite/
+.tmp/
+tmp/
+dist/
+node_modules/
+release/
+*.log
