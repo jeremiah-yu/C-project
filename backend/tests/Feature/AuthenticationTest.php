@@ -85,6 +85,54 @@ class AuthenticationTest extends TestCase
             ]);
     }
 
+    public function test_a_guest_can_register_and_log_in(): void
+    {
+        $registration = $this->postJson('/api/register', [
+            'username' => 'guest-user',
+            'email' => 'guest@example.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'first_name' => 'Guest',
+            'last_name' => 'User',
+            'gender' => 'Prefer not to say',
+        ]);
+
+        $registration
+            ->assertCreated()
+            ->assertJsonPath('data.user.username', 'guest-user')
+            ->assertJsonPath('data.user.role.role_name', Role::GUEST)
+            ->assertJsonPath('data.user.profile.email', 'guest@example.com');
+
+        $this->postJson('/api/login', [
+            'username' => 'guest-user',
+            'password' => 'Password123!',
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.user.role.role_name', Role::GUEST);
+    }
+
+    public function test_guest_registration_returns_validation_errors_for_duplicate_identity_fields(): void
+    {
+        $user = $this->createActiveUser();
+        $user->profile()->create([
+            'first_name' => 'Existing',
+            'last_name' => 'User',
+            'gender' => 'Prefer not to say',
+            'email' => 'existing@example.com',
+        ]);
+
+        $this->postJson('/api/register', [
+            'username' => $user->username,
+            'email' => 'existing@example.com',
+            'password' => 'short',
+            'password_confirmation' => 'mismatch',
+            'first_name' => '',
+            'last_name' => '',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['username', 'email', 'password', 'first_name', 'last_name', 'gender']);
+    }
+
     private function createActiveUser(): User
     {
         $role = Role::query()->create([

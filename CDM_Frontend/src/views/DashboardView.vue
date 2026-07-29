@@ -1,11 +1,13 @@
 <script setup>
 import { computed } from 'vue'
 import { useNavigationStore } from '../stores/navigation'
+import { useAuthStore } from '../stores/authStore'
 
 const navigationStore = useNavigationStore()
+const authStore = useAuthStore()
 
 const moduleCards = computed(() =>
-  navigationStore.menuItems.filter((item) => item.name !== 'dashboard'),
+  navigationStore.menuItemsForRole(authStore.currentRole).filter((item) => item.name !== 'dashboard'),
 )
 </script>
 

@@ -1,6 +1,7 @@
 <script setup>
 import { RouterLink } from 'vue-router'
 import { useNavigationStore } from '../stores/navigation'
+import { useAuthStore } from '../stores/authStore'
 
 defineProps({
   isOpen: {
@@ -11,6 +12,7 @@ defineProps({
 
 const emit = defineEmits(['close'])
 const navigationStore = useNavigationStore()
+const authStore = useAuthStore()
 </script>
 
 <template>
@@ -25,7 +27,7 @@ const navigationStore = useNavigationStore()
 
     <nav class="sidebar-nav" aria-label="Main navigation">
       <RouterLink
-        v-for="item in navigationStore.menuItems"
+        v-for="item in navigationStore.menuItemsForRole(authStore.currentRole)"
         :key="item.name"
         :to="item.path"
         class="nav-link"

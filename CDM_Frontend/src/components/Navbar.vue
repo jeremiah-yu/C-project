@@ -1,5 +1,7 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/authStore'
 
 defineProps({
   title: {
@@ -9,8 +11,15 @@ defineProps({
 })
 
 const emit = defineEmits(['toggle-sidebar'])
+const router = useRouter()
+const authStore = useAuthStore()
 const installPrompt = ref(null)
 const canInstall = ref(false)
+const displayName = computed(() => {
+  const profile = authStore.currentUser?.profile
+  return [profile?.first_name, profile?.last_name].filter(Boolean).join(' ') || authStore.currentUser?.username || 'User'
+})
+const initials = computed(() => displayName.value.slice(0, 1).toUpperCase())
 
 onMounted(() => {
   window.addEventListener('beforeinstallprompt', (event) => {
@@ -26,6 +35,11 @@ const installApp = async () => {
   await installPrompt.value.prompt()
   installPrompt.value = null
   canInstall.value = false
+}
+
+const logout = async () => {
+  await authStore.logout()
+  router.replace({ name: 'login' })
 }
 </script>
 
@@ -48,8 +62,9 @@ const installApp = async () => {
       </button>
 
       <div class="navbar-user" aria-label="Signed in user">
-        <span class="user-avatar">A</span>
-        <span class="user-name">Admin</span>
+        <span class="user-avatar">{{ initials }}</span>
+        <span class="user-name">{{ displayName }}</span>
+        <button class="logout-button" type="button" @click="logout">Sign out</button>
       </div>
     </div>
   </header>
@@ -131,6 +146,8 @@ h1 {
   font-weight: 700;
   cursor: pointer;
 }
+
+.logout-button { border: 0; background: transparent; color: var(--color-dark-spring-green); font-weight: 700; cursor: pointer; }
 
 .install-button:hover {
   background: var(--color-dark-spring-green);

@@ -5,16 +5,37 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RegisterGuestRequest;
 use App\Http\Resources\AuthResource;
 use App\Models\User;
 use App\Services\AuthenticationService;
+use App\Services\GuestRegistrationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
-    public function __construct(private readonly AuthenticationService $authenticationService)
+    public function __construct(
+        private readonly AuthenticationService $authenticationService,
+        private readonly GuestRegistrationService $guestRegistrationService,
+    )
     {
+    }
+
+    /**
+     * Register a public Guest account. Email verification will be added later.
+     */
+    public function register(RegisterGuestRequest $request): JsonResponse
+    {
+        $user = $this->guestRegistrationService->register($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Registration successful. You can now sign in.',
+            'data' => [
+                'user' => new AuthResource($user),
+            ],
+        ], 201);
     }
 
     /**
