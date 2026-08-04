@@ -15,7 +15,9 @@ import EnrollmentView from '../modules/enrollment/EnrollmentView.vue'
 import GradingView from '../modules/grading/GradingView.vue'
 import MonitoringView from '../modules/monitoring/MonitoringView.vue'
 import DocumentRequestView from '../modules/document-request/DocumentRequestView.vue'
-import StudentManagementView from '../modules/student-management/StudentManagementView.vue'
+import StudentRecordsView from '../modules/student-management/StudentRecordsView.vue'
+import StudentProfileView from '../modules/student-management/StudentProfileView.vue'
+import StudentDocumentsView from '../modules/student-management/StudentDocumentsView.vue'
 import EventAttendanceView from '../modules/event-attendance/EventAttendanceView.vue'
 
 const protectedRoute = (route) => ({ ...route, meta: { requiresAuth: true, ...route.meta } })
@@ -43,7 +45,9 @@ const routes = [
       protectedRoute({ path: 'grading', name: 'grading', component: GradingView, meta: { title: 'Grading', roles: ROUTE_ROLES.grading } }),
       protectedRoute({ path: 'monitoring', name: 'monitoring', component: MonitoringView, meta: { title: 'Monitoring', roles: ROUTE_ROLES.monitoring } }),
       protectedRoute({ path: 'document-request', name: 'document-request', component: DocumentRequestView, meta: { title: 'Document Requests', roles: ROUTE_ROLES['document-request'] } }),
-      protectedRoute({ path: 'student-management', name: 'student-management', component: StudentManagementView, meta: { title: 'Student Management', roles: ROUTE_ROLES['student-management'] } }),
+      protectedRoute({ path: 'student-management', name: 'student-management', component: StudentRecordsView, meta: { title: 'Student Management', roles: ROUTE_ROLES['student-management'] } }),
+      protectedRoute({ path: 'student-management/:id', name: 'student-details', component: StudentProfileView, meta: { title: 'Student Profile', roles: ROUTE_ROLES['student-management'] } }),
+      protectedRoute({ path: 'student-management/:id/documents', name: 'student-documents', component: StudentDocumentsView, meta: { title: 'Student Documents', roles: ROUTE_ROLES['student-management'] } }),
       protectedRoute({ path: 'event-attendance', name: 'event-attendance', component: EventAttendanceView, meta: { title: 'Event Attendance', roles: ROUTE_ROLES['event-attendance'] } }),
       protectedRoute({ path: 'unauthorized', name: 'unauthorized', component: UnauthorizedView, meta: { title: 'Unauthorized', roles: ROUTE_ROLES.home } }),
     ],

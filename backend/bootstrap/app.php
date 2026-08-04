@@ -10,6 +10,7 @@ use App\Http\Middleware\EnsureAdminRole;
 use App\Http\Middleware\EnsureProfessorRole;
 use App\Http\Middleware\EnsureRegistrarStaffRole;
 use App\Http\Middleware\EnsureStudentRole;
+use App\Http\Middleware\EnsureRegistrarOrAdminRole;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -24,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role.registrar-staff' => EnsureRegistrarStaffRole::class,
             'role.professor' => EnsureProfessorRole::class,
             'role.student' => EnsureStudentRole::class,
+            'role.registrar-or-admin' => EnsureRegistrarOrAdminRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

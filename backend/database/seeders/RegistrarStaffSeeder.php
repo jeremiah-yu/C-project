@@ -21,5 +21,6 @@ class RegistrarStaffSeeder extends Seeder
                 'updated_at' => now(),
             ],
         ]);
+        
     }
 }

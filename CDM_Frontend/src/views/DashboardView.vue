@@ -16,8 +16,7 @@ const moduleCards = computed(() =>
     <p class="page-kicker">Welcome</p>
     <h1 class="page-title">CDM Portal Dashboard</h1>
     <p class="page-description">
-      This frontend scaffold gives each campus management module its own route and folder,
-      so developers can build independently while sharing the same layout and navigation.
+      Welcome to OneServe, your centralized campus information workspace.
     </p>
   </section>
 
@@ -33,19 +32,19 @@ const moduleCards = computed(() =>
 <style scoped>
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 20px;
 }
 
 .module-card {
   display: grid;
-  min-height: 210px;
+  min-height: 190px;
   align-content: start;
   gap: 12px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: 16px;
   background: var(--color-surface);
-  padding: 22px;
+  padding: 24px;
   box-shadow: var(--shadow-soft);
   transition:
     border-color 160ms ease,
@@ -55,7 +54,7 @@ const moduleCards = computed(() =>
 
 .module-card:hover {
   border-color: var(--color-dark-spring-green);
-  transform: translateY(-2px);
+  transform: translateY(-4px);
   box-shadow: 0 20px 44px rgba(13, 120, 86, 0.16);
 }
 
@@ -64,11 +63,12 @@ const moduleCards = computed(() =>
   width: 46px;
   height: 46px;
   place-items: center;
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--color-green-tint);
   color: var(--color-dartmouth-green);
-  font-size: 1.3rem;
+  font-size: 0;
 }
+.module-icon::after { content: '✦'; font-size: 1.25rem; }
 
 .module-card h2 {
   margin: 0;

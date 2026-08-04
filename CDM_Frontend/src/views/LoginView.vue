@@ -3,6 +3,7 @@ import { reactive, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { dashboardForRole } from '../utils/roleDashboard'
+import logoUrl from '../assets/styles/images/cdm_logo.png'
 
 const router = useRouter()
 const route = useRoute()
@@ -41,7 +42,7 @@ const submit = async () => {
 
 <template>
   <section class="login-card" aria-labelledby="login-title">
-    <p class="brand">CDM Portal</p>
+    <div class="brand"><img :src="logoUrl" alt="CDM logo"><span>CDM Portal<small>OneServe</small></span></div>
     <h1 id="login-title">Sign in</h1>
     <p class="intro">Use your campus account to continue.</p>
     <p v-if="route.query.registered" class="registration-success" role="status">Account created. You can now sign in.</p>
@@ -68,10 +69,10 @@ const submit = async () => {
 </template>
 
 <style scoped>
-.login-card { width: min(100%, 420px); border-radius: 14px; background: var(--color-surface); padding: 36px; box-shadow: 0 24px 60px rgba(0, 0, 0, .2); }
-.brand { margin: 0 0 8px; color: var(--color-dartmouth-green); font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.login-card { width: min(100%, 440px); border-radius: 20px; background: var(--color-surface); padding: 38px; box-shadow: 0 24px 60px rgba(0, 0, 0, .2); }
+.brand { align-items:center; display:flex; gap:11px; margin:0 0 18px; color:var(--color-dartmouth-green); font-weight:800; letter-spacing:.02em; }.brand img { background:#fff; border-radius:50%; height:48px; object-fit:contain; padding:2px; width:48px; }.brand small { color:var(--color-dark-spring-green); display:block; font-size:.75rem; letter-spacing:.08em; text-transform:uppercase; }
 h1 { margin: 0; font-size: 2rem; }.intro { margin: 8px 0 26px; color: var(--color-muted); }
-label { display: block; margin: 18px 0 7px; font-weight: 700; } input { width: 100%; min-height: 44px; border: 1px solid var(--color-border); border-radius: 8px; padding: 0 12px; }
+label { display: block; margin: 18px 0 7px; font-weight: 700; } input { width: 100%; min-height: 46px; border: 1px solid var(--color-border); border-radius: 10px; padding: 0 12px; }
 .password-field { position: relative; }.password-field input { padding-right: 66px; }.password-field button { position: absolute; top: 5px; right: 5px; min-height: 34px; border: 0; border-radius: 6px; background: transparent; color: var(--color-dark-spring-green); font-weight: 700; cursor: pointer; }
 .remember { display: flex; align-items: center; gap: 8px; color: var(--color-muted); font-size: .9rem; font-weight: 500; }.remember input { width: auto; min-height: auto; }
 .submit { width: 100%; min-height: 46px; margin-top: 24px; border: 0; border-radius: 8px; background: var(--color-dartmouth-green); color: #fff; font-weight: 800; cursor: pointer; }.submit:disabled { cursor: wait; opacity: .7; }

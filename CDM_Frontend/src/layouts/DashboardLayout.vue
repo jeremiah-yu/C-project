@@ -35,13 +35,13 @@ const isSidebarOpen = ref(false)
 
 .shell-content {
   min-height: 100vh;
-  margin-left: 280px;
+  margin-left: 250px;
 }
 
 .main-content {
   width: min(1180px, 100%);
   margin: 0 auto;
-  padding: 28px;
+  padding: 32px;
 }
 
 .sidebar-backdrop {

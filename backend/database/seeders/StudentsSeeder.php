@@ -15,7 +15,7 @@ class StudentsSeeder extends Seeder
                 'user_profile_id' => 4,
                 'course_id' => 1,
                 'curriculum_id' => 1,
-                'student_number' => '2026-000001',
+                'student_number' => '26-00001',
                 'admission_date' => '2026-08-01',
                 'student_status' => 'regular',
                 'created_at' => now(),

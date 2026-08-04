@@ -20,6 +20,7 @@ const displayName = computed(() => {
   return [profile?.first_name, profile?.last_name].filter(Boolean).join(' ') || authStore.currentUser?.username || 'User'
 })
 const initials = computed(() => displayName.value.slice(0, 1).toUpperCase())
+const pageTitle = computed(() => router.currentRoute.value.meta.title || 'CDM Portal')
 
 onMounted(() => {
   window.addEventListener('beforeinstallprompt', (event) => {
@@ -52,8 +53,8 @@ const logout = async () => {
     </button>
 
     <div>
-      <p class="navbar-label">Campus Management System</p>
-      <h1>{{ title }}</h1>
+      <p class="navbar-label">CDM OneServe</p>
+      <h1>{{ title === 'CDM Portal' ? pageTitle : title }}</h1>
     </div>
 
     <div class="navbar-actions">
@@ -63,7 +64,7 @@ const logout = async () => {
 
       <div class="navbar-user" aria-label="Signed in user">
         <span class="user-avatar">{{ initials }}</span>
-        <span class="user-name">{{ displayName }}</span>
+        <span class="user-name"><strong>{{ displayName }}</strong><small>{{ authStore.currentRole }}</small></span>
         <button class="logout-button" type="button" @click="logout">Sign out</button>
       </div>
     </div>
@@ -81,7 +82,7 @@ const logout = async () => {
   justify-content: space-between;
   gap: 18px;
   border-bottom: 1px solid var(--color-border);
-  background: rgba(241, 241, 241, 0.94);
+  background: rgba(255,255,255,.94);
   padding: 14px 28px;
   backdrop-filter: blur(12px);
 }
@@ -147,7 +148,7 @@ h1 {
   cursor: pointer;
 }
 
-.logout-button { border: 0; background: transparent; color: var(--color-dark-spring-green); font-weight: 700; cursor: pointer; }
+.logout-button { border: 1px solid var(--color-border); border-radius: 8px; background: #fff; color: var(--color-dartmouth-green); font-weight: 700; padding: 8px 11px; cursor: pointer; }
 
 .install-button:hover {
   background: var(--color-dark-spring-green);
@@ -162,6 +163,7 @@ h1 {
   background: var(--color-naples-yellow);
   color: var(--color-eerie-black);
 }
+.user-name strong,.user-name small { display:block; }.user-name strong { font-size:.86rem; }.user-name small { color:var(--color-muted); font-size:.72rem; font-weight:500; margin-top:2px; }
 
 @media (max-width: 860px) {
   .navbar {
