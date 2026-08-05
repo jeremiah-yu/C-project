@@ -1,8 +1,10 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { ROLES, ROUTE_ROLES, canAccess, dashboardForRole } from '../config/accessControl'
+import PublicLayout from '../layouts/PublicLayout.vue'
 import AuthLayout from '../layouts/AuthLayout.vue'
 import DashboardLayout from '../layouts/DashboardLayout.vue'
+import LandingView from '../views/LandingView.vue'
 import DashboardView from '../views/DashboardView.vue'
 import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
@@ -24,13 +26,26 @@ const protectedRoute = (route) => ({ ...route, meta: { requiresAuth: true, ...ro
 
 const routes = [
   {
-    path: '/login', component: AuthLayout, meta: { guestOnly: true }, children: [
+    path: '/',
+    component: PublicLayout,
+    children: [
+      { path: '', name: 'landing', component: LandingView, meta: { title: 'Home' } },
+    ],
+  },
+  {
+    path: '/login',
+    component: AuthLayout,
+    meta: { guestOnly: true },
+    children: [
       { path: '', name: 'login', component: LoginView, meta: { title: 'Sign in', guestOnly: true } },
       { path: '/register', name: 'register', component: RegisterView, meta: { title: 'Register', guestOnly: true } },
     ],
   },
   {
-    path: '/', component: DashboardLayout, meta: { requiresAuth: true }, children: [
+    path: '/portal',
+    component: DashboardLayout,
+    meta: { requiresAuth: true },
+    children: [
       protectedRoute({ path: '', name: 'home', component: DashboardView, meta: { title: 'Dashboard', roles: ROUTE_ROLES.home } }),
       protectedRoute({ path: 'guest-dashboard', name: 'guest-dashboard', component: GuestDashboardView, meta: { title: 'Guest Dashboard', roles: ROUTE_ROLES['guest-dashboard'] } }),
       protectedRoute({ path: 'student-dashboard', name: 'student-dashboard', component: RoleDashboardView, props: { role: ROLES.STUDENT }, meta: { title: 'Student Dashboard', roles: ROUTE_ROLES['student-dashboard'] } }),
@@ -43,7 +58,7 @@ const routes = [
       protectedRoute({ path: 'admission', name: 'admission', component: AdmissionView, meta: { title: 'Admission', roles: ROUTE_ROLES.admission } }),
       protectedRoute({ path: 'enrollment', name: 'enrollment', component: EnrollmentView, meta: { title: 'Enrollment', roles: ROUTE_ROLES.enrollment } }),
       protectedRoute({ path: 'grading', name: 'grading', component: GradingView, meta: { title: 'Grading', roles: ROUTE_ROLES.grading } }),
-      protectedRoute({ path: 'monitoring', name: 'monitoring', component: MonitoringView, meta: { title: 'Monitoring', roles: ROUTE_ROLES.monitoring } }),
+      protectedRoute({ path: 'monitoring', name: 'monitoring', component: MonitoringView, meta: { title: 'AI Monitoring', roles: ROUTE_ROLES.monitoring } }),
       protectedRoute({ path: 'document-request', name: 'document-request', component: DocumentRequestView, meta: { title: 'Document Requests', roles: ROUTE_ROLES['document-request'] } }),
       protectedRoute({ path: 'student-management', name: 'student-management', component: StudentRecordsView, meta: { title: 'Student Management', roles: ROUTE_ROLES['student-management'] } }),
       protectedRoute({ path: 'student-management/:id', name: 'student-details', component: StudentProfileView, meta: { title: 'Student Profile', roles: ROUTE_ROLES['student-management'] } }),
@@ -61,11 +76,14 @@ router.beforeEach(async (to) => {
   const authStore = useAuthStore()
   await authStore.initialize()
 
-  if (to.matched.some((record) => record.meta.guestOnly) && authStore.isAuthenticated) return dashboardForRole(authStore.currentRole)
+  if (to.matched.some((record) => record.meta.guestOnly) && authStore.isAuthenticated) {
+    return dashboardForRole(authStore.currentRole)
+  }
+
   if (!to.matched.some((record) => record.meta.requiresAuth)) return true
   if (!authStore.isAuthenticated) return { name: 'login', query: { redirect: to.fullPath } }
   if (to.name === 'home') return dashboardForRole(authStore.currentRole)
-  if (!canAccess(authStore.currentRole, to.meta.roles || ALL_ROLES)) return { name: 'unauthorized' }
+  if (!canAccess(authStore.currentRole, to.meta.roles || Object.values(ROLES))) return { name: 'unauthorized' }
   return true
 })
 

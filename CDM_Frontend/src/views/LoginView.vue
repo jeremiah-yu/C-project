@@ -64,6 +64,7 @@ const submit = async () => {
       <label class="remember"><input v-model="form.remember" type="checkbox" /> Remember me on this device</label>
       <button class="submit" type="submit" :disabled="isLoading">{{ isLoading ? 'Signing in…' : 'Sign in' }}</button>
       <p class="register-link">Need an account? <RouterLink :to="{ name: 'register' }">Register as a Guest</RouterLink></p>
+      <p class="home-link"><RouterLink :to="{ name: 'landing' }">Back to campus overview</RouterLink></p>
     </form>
   </section>
 </template>
@@ -77,5 +78,5 @@ label { display: block; margin: 18px 0 7px; font-weight: 700; } input { width: 1
 .remember { display: flex; align-items: center; gap: 8px; color: var(--color-muted); font-size: .9rem; font-weight: 500; }.remember input { width: auto; min-height: auto; }
 .submit { width: 100%; min-height: 46px; margin-top: 24px; border: 0; border-radius: 8px; background: var(--color-dartmouth-green); color: #fff; font-weight: 800; cursor: pointer; }.submit:disabled { cursor: wait; opacity: .7; }
 .field-error, .form-error { margin: 6px 0 0; color: #b42318; font-size: .88rem; }.form-error { border-radius: 8px; background: #fef3f2; padding: 10px; }
-.registration-success { border-radius: 8px; background: #edf7ef; color: #176434; padding: 10px; font-size: .9rem; }.register-link { margin: 16px 0 0; text-align: center; color: var(--color-muted); }.register-link a { color: var(--color-dark-spring-green); font-weight: 700; }
+.registration-success { border-radius: 8px; background: #edf7ef; color: #176434; padding: 10px; font-size: .9rem; }.register-link, .home-link { margin: 16px 0 0; text-align: center; color: var(--color-muted); }.register-link a, .home-link a { color: var(--color-dark-spring-green); font-weight: 700; }.home-link { margin-top: 8px; }
 </style>

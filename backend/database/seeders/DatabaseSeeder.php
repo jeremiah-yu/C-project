@@ -30,6 +30,9 @@ class DatabaseSeeder extends Seeder
             RegistrarStaffSeeder::class,
             ProfessorsSeeder::class,
             StudentsSeeder::class,
+
+            // AI Monitoring demo grades
+            MonitoringDemoSeeder::class,
         ]);
     }
 }

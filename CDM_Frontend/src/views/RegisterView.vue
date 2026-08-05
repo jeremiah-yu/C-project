@@ -62,6 +62,7 @@ formError.value =
       <label>Confirm password<input v-model="form.password_confirmation" :type="showPassword ? 'text' : 'password'" autocomplete="new-password" /><small v-if="errors.password_confirmation">{{ errors.password_confirmation }}</small></label>
       <button class="submit" type="submit" :disabled="isLoading">{{ isLoading ? 'Creating account…' : 'Create account' }}</button>
       <p class="sign-in">Already have an account? <RouterLink :to="{ name: 'login' }">Sign in</RouterLink></p>
+      <p class="sign-in"><RouterLink :to="{ name: 'landing' }">Back to campus overview</RouterLink></p>
     </form>
   </section>
 </template>

@@ -11,8 +11,8 @@ class RegistrarStaffSeeder extends Seeder
     {
         DB::table('registrar_staff')->insert([
             [
-                'user_id' => 2,
-                'user_profile_id' => 2,
+                'user_id' => 3,
+                'user_profile_id' => 3,
                 'employee_number' => 'REG-2026-001',
                 'position' => 'Registrar Staff',
                 'employment_status' => 'regular',

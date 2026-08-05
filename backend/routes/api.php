@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\MonitoringController;
 use App\Http\Controllers\Api\StudentController;
 use Illuminate\Support\Facades\Route;
 
@@ -11,6 +12,12 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);
+
+    Route::middleware('role.monitoring')->group(function (): void {
+        Route::get('/monitoring/early-warnings', [MonitoringController::class, 'earlyWarnings']);
+        Route::get('/monitoring/my-risk', [MonitoringController::class, 'myRisk']);
+        Route::post('/monitoring/students/{student}/support-plan', [MonitoringController::class, 'supportPlan']);
+    });
 
     Route::middleware('role.registrar-or-admin')->group(function (): void {
         Route::get('/students', [StudentController::class, 'index']);
