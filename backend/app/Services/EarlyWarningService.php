@@ -2,29 +2,46 @@
 
 namespace App\Services;
 
+use App\Models\Professor;
 use App\Models\Student;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 class EarlyWarningService
 {
     /**
-     * Build early-warning overview for all students with grade records.
+     * Build early-warning overview for students with approved grade records.
      *
      * @return array{summary: array<string, int>, students: list<array<string, mixed>>}
      */
-    public function overview(): array
+    public function overview(?int $professorUserId = null): array
     {
-        $students = Student::query()
-            ->with([
-                'userProfile',
-                'course',
-                'enrollments.enrollmentSubjects.subject',
-                'enrollments.enrollmentSubjects.grades.gradingPeriod',
-            ])
-            ->whereHas('enrollments.enrollmentSubjects.grades')
+        $query = $this->baseStudentQuery();
+
+        if ($professorUserId !== null) {
+            $professorId = Professor::query()->where('user_id', $professorUserId)->value('id');
+
+            if (! $professorId) {
+                return [
+                    'summary' => ['high' => 0, 'moderate' => 0, 'low' => 0, 'total' => 0],
+                    'students' => [],
+                ];
+            }
+
+            $query->whereHas('enrollments.enrollmentSubjects', function (Builder $builder) use ($professorId): void {
+                $builder->where('professor_id', $professorId);
+            });
+        }
+
+        $students = $query
             ->orderBy('student_number')
             ->get()
-            ->map(fn (Student $student) => $this->assessStudent($student))
+            ->map(function (Student $student) {
+                $assessment = $this->assessStudent($student);
+                $assessment['support_plan'] = $this->generateSupportPlan($assessment);
+
+                return $assessment;
+            })
             ->sortByDesc(fn (array $item) => ['high' => 3, 'moderate' => 2, 'low' => 1][$item['risk_level']] ?? 0)
             ->values();
 
@@ -41,15 +58,16 @@ class EarlyWarningService
      */
     public function assessForUserId(int $userId): array
     {
-        $student = Student::query()
-            ->with([
-                'userProfile',
-                'course',
-                'enrollments.enrollmentSubjects.subject',
-                'enrollments.enrollmentSubjects.grades.gradingPeriod',
-            ])
+        $student = $this->baseStudentQuery()
             ->where('user_id', $userId)
             ->first();
+
+        if (! $student) {
+            $student = Student::query()
+                ->with(['userProfile', 'course', 'enrollments.enrollmentSubjects.subject', 'enrollments.enrollmentSubjects.grades.gradingPeriod'])
+                ->where('user_id', $userId)
+                ->first();
+        }
 
         if (! $student) {
             return [
@@ -72,14 +90,10 @@ class EarlyWarningService
      */
     public function assessByStudentId(int $studentId): ?array
     {
-        $student = Student::query()
-            ->with([
-                'userProfile',
-                'course',
-                'enrollments.enrollmentSubjects.subject',
-                'enrollments.enrollmentSubjects.grades.gradingPeriod',
-            ])
-            ->find($studentId);
+        $student = $this->baseStudentQuery()->find($studentId)
+            ?? Student::query()
+                ->with(['userProfile', 'course', 'enrollments.enrollmentSubjects.subject', 'enrollments.enrollmentSubjects.grades.gradingPeriod'])
+                ->find($studentId);
 
         return $student ? $this->assessStudent($student) : null;
     }
@@ -139,6 +153,19 @@ class EarlyWarningService
         ];
     }
 
+    private function baseStudentQuery(): Builder
+    {
+        return Student::query()
+            ->with([
+                'userProfile',
+                'course',
+                'enrollments.enrollmentSubjects.subject',
+                'enrollments.enrollmentSubjects.grades' => fn ($query) => $query->where('status', 'approved'),
+                'enrollments.enrollmentSubjects.grades.gradingPeriod',
+            ])
+            ->whereHas('enrollments.enrollmentSubjects.grades', fn (Builder $query) => $query->where('status', 'approved'));
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -156,6 +183,10 @@ class EarlyWarningService
                 ];
 
                 foreach ($enrollmentSubject->grades as $grade) {
+                    if ($grade->status !== null && $grade->status !== 'approved') {
+                        continue;
+                    }
+
                     $periodName = $grade->gradingPeriod?->period_name;
                     if ($periodName && array_key_exists($periodName, $periods)) {
                         $periods[$periodName] = $grade->grade;
@@ -166,7 +197,11 @@ class EarlyWarningService
                 }
 
                 $subjectScores = array_values(array_filter($periods, fn ($score) => $score !== null));
-                $subjectAverage = count($subjectScores) ? round(array_sum($subjectScores) / count($subjectScores), 2) : null;
+                if ($subjectScores === []) {
+                    continue;
+                }
+
+                $subjectAverage = round(array_sum($subjectScores) / count($subjectScores), 2);
                 $subjectRisk = $this->scoreRisk($subjectAverage, $subjectScores, $enrollmentSubject->remarks);
 
                 $subjects[] = [

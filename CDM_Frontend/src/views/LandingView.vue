@@ -2,13 +2,30 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
+import { ROUTE_ROLES, canAccess, dashboardForRole } from '../config/accessControl'
 import { schoolInfo } from '../content/schoolInfo'
 
 const authStore = useAuthStore()
 
+const canOpenMonitoring = computed(() => (
+  authStore.isAuthenticated && canAccess(authStore.currentRole, ROUTE_ROLES.monitoring)
+))
+
+const portalLink = computed(() => {
+  if (!authStore.isAuthenticated) return { name: 'login' }
+  return dashboardForRole(authStore.currentRole)
+})
+
 const monitoringLink = computed(() => {
-  if (authStore.isAuthenticated) return { name: 'monitoring' }
+  if (canOpenMonitoring.value) return { name: 'monitoring' }
+  if (authStore.isAuthenticated) return dashboardForRole(authStore.currentRole)
   return { name: 'login', query: { redirect: '/portal/monitoring' } }
+})
+
+const monitoringCtaLabel = computed(() => {
+  if (canOpenMonitoring.value) return 'Open AI Monitoring'
+  if (authStore.isAuthenticated) return 'Go to portal'
+  return 'Sign in for AI Monitoring'
 })
 </script>
 
@@ -20,7 +37,7 @@ const monitoringLink = computed(() => {
         <h1>{{ schoolInfo.name }}</h1>
         <p class="hero-support">{{ schoolInfo.tagline }}</p>
         <div class="hero-actions">
-          <RouterLink class="btn-primary" :to="authStore.isAuthenticated ? { name: 'monitoring' } : { name: 'login' }">
+          <RouterLink class="btn-primary" :to="portalLink">
             {{ authStore.isAuthenticated ? 'Go to portal' : 'Sign in to portal' }}
           </RouterLink>
           <a class="btn-secondary" href="#ai-monitoring">See AI Monitoring</a>
@@ -84,7 +101,7 @@ const monitoringLink = computed(() => {
             class="link-action"
             :to="monitoringLink"
           >
-            Open AI Monitoring
+            {{ monitoringCtaLabel }}
           </RouterLink>
           <span v-else class="link-wait">Notify when ready</span>
         </article>

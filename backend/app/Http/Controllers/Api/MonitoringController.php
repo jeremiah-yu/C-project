@@ -28,10 +28,12 @@ class MonitoringController extends Controller
             ]);
         }
 
+        $professorUserId = $user->role?->role_name === Role::PROFESSOR ? $user->id : null;
+
         return response()->json([
             'success' => true,
             'message' => 'Early-warning overview loaded.',
-            'data' => $this->earlyWarningService->overview(),
+            'data' => $this->earlyWarningService->overview($professorUserId),
         ]);
     }
 

@@ -48,7 +48,10 @@ const onGenerate = async () => {
   generating.value = true
   error.value = ''
   try {
-    supportPlan.value = await generateSupportPlan(selected.value.student_id)
+    const plan = await generateSupportPlan(selected.value.student_id)
+    supportPlan.value = plan
+    const target = students.value.find((item) => item.student_id === selected.value.student_id)
+    if (target) target.support_plan = plan
   } catch (err) {
     error.value = err.response?.data?.message || 'Unable to generate support plan.'
   } finally {
@@ -68,7 +71,10 @@ onMounted(load)
     </p>
   </section>
 
-  <p v-if="error" class="banner-error" role="alert">{{ error }}</p>
+  <div v-if="error" class="banner-error" role="alert">
+    <span>{{ error }}</span>
+    <button type="button" class="retry-btn" @click="load">Retry</button>
+  </div>
   <p v-if="loading" class="banner-muted">Analyzing grade signals…</p>
 
   <template v-else-if="overview">
@@ -172,7 +178,7 @@ onMounted(load)
           <div class="support-head">
             <h3>Help support plan</h3>
             <button type="button" class="generate-btn" :disabled="generating" @click="onGenerate">
-              {{ generating ? 'Generating…' : 'Generate help support' }}
+              {{ generating ? 'Generating…' : supportPlan ? 'Refresh help support' : 'Generate help support' }}
             </button>
           </div>
           <template v-if="supportPlan">
@@ -184,6 +190,12 @@ onMounted(load)
           </template>
           <p v-else class="empty">Generate a personalized plan to prevent failing risk.</p>
         </div>
+      </section>
+
+      <section v-else class="detail-panel">
+        <h2>No student selected</h2>
+        <p class="empty">Seed grades or enroll students to start AI Monitoring.</p>
+        <button type="button" class="generate-btn" @click="load">Reload monitoring</button>
       </section>
     </div>
   </template>
@@ -198,8 +210,23 @@ onMounted(load)
 }
 
 .banner-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   background: #fef3f2;
   color: #b42318;
+}
+
+.retry-btn {
+  border: 0;
+  border-radius: 8px;
+  background: #b42318;
+  color: #fff;
+  font-weight: 700;
+  min-height: 34px;
+  padding: 0 12px;
+  cursor: pointer;
 }
 
 .banner-muted {
