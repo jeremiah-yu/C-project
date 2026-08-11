@@ -1,10 +1,12 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { ROLES, ROUTE_ROLES, canAccess, dashboardForRole } from '../config/accessControl'
+import { isStudentMobileApp } from '../utils/platform'
 import PublicLayout from '../layouts/PublicLayout.vue'
 import AuthLayout from '../layouts/AuthLayout.vue'
 import DashboardLayout from '../layouts/DashboardLayout.vue'
 import LandingView from '../views/LandingView.vue'
+import GetStartedView from '../views/GetStartedView.vue'
 import DashboardView from '../views/DashboardView.vue'
 import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
@@ -30,6 +32,7 @@ const routes = [
     component: PublicLayout,
     children: [
       { path: '', name: 'landing', component: LandingView, meta: { title: 'Home' } },
+      { path: 'get-started', name: 'get-started', component: GetStartedView, meta: { title: 'Get started' } },
     ],
   },
   {
@@ -59,6 +62,8 @@ const routes = [
       protectedRoute({ path: 'enrollment', name: 'enrollment', component: EnrollmentView, meta: { title: 'Enrollment', roles: ROUTE_ROLES.enrollment } }),
       protectedRoute({ path: 'grading', name: 'grading', component: GradingView, meta: { title: 'Grading', roles: ROUTE_ROLES.grading } }),
       protectedRoute({ path: 'monitoring', name: 'monitoring', component: MonitoringView, meta: { title: 'AI Monitoring', roles: ROUTE_ROLES.monitoring } }),
+      { path: 'study-plans', redirect: { name: 'monitoring', query: { tab: 'study-plans' } } },
+      { path: 'adviser-alerts', redirect: { name: 'monitoring', query: { tab: 'alerts' } } },
       protectedRoute({ path: 'document-request', name: 'document-request', component: DocumentRequestView, meta: { title: 'Document Requests', roles: ROUTE_ROLES['document-request'] } }),
       protectedRoute({ path: 'student-management', name: 'student-management', component: StudentRecordsView, meta: { title: 'Student Management', roles: ROUTE_ROLES['student-management'] } }),
       protectedRoute({ path: 'student-management/:id', name: 'student-details', component: StudentProfileView, meta: { title: 'Student Profile', roles: ROUTE_ROLES['student-management'] } }),
@@ -75,6 +80,20 @@ const router = createRouter({ history: createWebHashHistory(), routes })
 router.beforeEach(async (to) => {
   const authStore = useAuthStore()
   await authStore.initialize()
+
+  // Student mobile app: skip public landing / guest registration.
+  if (isStudentMobileApp()) {
+    if (to.name === 'landing' || to.name === 'register') {
+      return authStore.isAuthenticated
+        ? dashboardForRole(ROLES.STUDENT)
+        : { name: 'login' }
+    }
+
+    if (authStore.isAuthenticated && authStore.currentRole !== ROLES.STUDENT) {
+      authStore.clearAuth()
+      return { name: 'login', query: { mobileOnly: '1' } }
+    }
+  }
 
   if (to.matched.some((record) => record.meta.guestOnly) && authStore.isAuthenticated) {
     return dashboardForRole(authStore.currentRole)

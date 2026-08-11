@@ -7,26 +7,28 @@ import { schoolInfo } from '../content/schoolInfo'
 
 const authStore = useAuthStore()
 
-const canOpenMonitoring = computed(() => (
-  authStore.isAuthenticated && canAccess(authStore.currentRole, ROUTE_ROLES.monitoring)
-))
-
 const portalLink = computed(() => {
   if (!authStore.isAuthenticated) return { name: 'login' }
   return dashboardForRole(authStore.currentRole)
 })
 
-const monitoringLink = computed(() => {
-  if (canOpenMonitoring.value) return { name: 'monitoring' }
+const featureLink = (routeName) => {
+  const roles = ROUTE_ROLES[routeName] || []
+  if (authStore.isAuthenticated && canAccess(authStore.currentRole, roles)) {
+    return { name: routeName }
+  }
   if (authStore.isAuthenticated) return dashboardForRole(authStore.currentRole)
-  return { name: 'login', query: { redirect: '/portal/monitoring' } }
-})
+  return { name: 'login', query: { redirect: `/portal/${routeName}` } }
+}
 
-const monitoringCtaLabel = computed(() => {
-  if (canOpenMonitoring.value) return 'Open AI Monitoring'
+const featureCtaLabel = (link) => {
+  const roles = ROUTE_ROLES[link.routeName] || []
+  if (authStore.isAuthenticated && canAccess(authStore.currentRole, roles)) {
+    return `Open ${link.title}`
+  }
   if (authStore.isAuthenticated) return 'Go to portal'
-  return 'Sign in for AI Monitoring'
-})
+  return 'Sign in to open'
+}
 </script>
 
 <template>
@@ -40,7 +42,14 @@ const monitoringCtaLabel = computed(() => {
           <RouterLink class="btn-primary" :to="portalLink">
             {{ authStore.isAuthenticated ? 'Go to portal' : 'Sign in to portal' }}
           </RouterLink>
-          <a class="btn-secondary" href="#ai-monitoring">See AI Monitoring</a>
+          <RouterLink
+            v-if="!authStore.isAuthenticated"
+            class="btn-secondary"
+            :to="{ name: 'get-started' }"
+          >
+            Get started
+          </RouterLink>
+          <a v-else class="btn-secondary" href="#ai-monitoring">See AI Monitoring</a>
         </div>
       </div>
       <div class="hero-visual" aria-hidden="true">
@@ -76,11 +85,11 @@ const monitoringCtaLabel = computed(() => {
 
     <section id="ai-monitoring" class="section upcoming">
       <header class="section-head">
-        <p class="kicker">Upcoming & available tools</p>
+        <p class="kicker">Available academic care tools</p>
         <h2>AI Monitoring Early Warning System</h2>
         <p>
-          Monitor grades in real time, surface risk of failing early, and generate help-support plans
-          that guide students before problems become permanent.
+          Monitor grades in real time, surface risk of failing early, generate professional study plans,
+          and review adviser alerts — all inside AI Monitoring.
         </p>
       </header>
 
@@ -97,13 +106,11 @@ const monitoringCtaLabel = computed(() => {
             <p>{{ link.description }}</p>
           </div>
           <RouterLink
-            v-if="link.routeName"
             class="link-action"
-            :to="monitoringLink"
+            :to="featureLink(link.routeName)"
           >
-            {{ monitoringCtaLabel }}
+            {{ featureCtaLabel(link) }}
           </RouterLink>
-          <span v-else class="link-wait">Notify when ready</span>
         </article>
       </div>
     </section>

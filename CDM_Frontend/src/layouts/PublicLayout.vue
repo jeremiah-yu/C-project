@@ -31,7 +31,7 @@ const authStore = useAuthStore()
         </RouterLink>
         <template v-else>
           <RouterLink class="nav-text" :to="{ name: 'login' }">Sign in</RouterLink>
-          <RouterLink class="nav-cta" :to="{ name: 'register' }">Get started</RouterLink>
+          <RouterLink class="nav-cta" :to="{ name: 'get-started' }">Get started</RouterLink>
         </template>
       </nav>
     </header>

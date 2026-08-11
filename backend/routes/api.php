@@ -17,6 +17,11 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/monitoring/early-warnings', [MonitoringController::class, 'earlyWarnings']);
         Route::get('/monitoring/my-risk', [MonitoringController::class, 'myRisk']);
         Route::post('/monitoring/students/{student}/support-plan', [MonitoringController::class, 'supportPlan']);
+        Route::get('/monitoring/study-plans', [MonitoringController::class, 'studyPlans']);
+        Route::get('/monitoring/students/{student}/study-plan', [MonitoringController::class, 'studyPlan']);
+        Route::get('/monitoring/adviser-alerts', [MonitoringController::class, 'adviserAlerts']);
+        Route::get('/monitoring/ai-status', [MonitoringController::class, 'aiStatus']);
+        Route::post('/monitoring/students/{student}/ai-help', [MonitoringController::class, 'aiHelp']);
     });
 
     Route::middleware('role.registrar-or-admin')->group(function (): void {

@@ -31,31 +31,14 @@ export const schoolInfo = {
   upcomingLinks: [
     {
       id: 'ai-monitoring',
-      title: 'AI Monitoring Early Warning',
+      title: 'AI Monitoring',
       status: 'Available now',
       description:
-        'Track grade trends, flag risk of failing, and generate personalized help-support plans for students and advisers.',
+        'Early warnings, professional weekly study plans, and adviser alerts — all in one academic risk workspace.',
       routeName: 'monitoring',
       requiresAuth: true,
       featured: true,
-    },
-    {
-      id: 'study-plans',
-      title: 'Guided Study Plans',
-      status: 'Coming soon',
-      description: 'Auto-built weekly study plans linked to subjects with declining grades.',
-      routeName: null,
-      requiresAuth: false,
-      featured: false,
-    },
-    {
-      id: 'advisor-alerts',
-      title: 'Adviser Alert Inbox',
-      status: 'Coming soon',
-      description: 'Push early-warning notices to professors and registrar advisers in one place.',
-      routeName: null,
-      requiresAuth: false,
-      featured: false,
+      roles: ['Student', 'Professor', 'Registrar Staff', 'Admin'],
     },
   ],
 }

@@ -23,7 +23,8 @@ const initials = computed(() => displayName.value.split(' ').map((part) => part[
 const iconPath = (name) => ({
   'student-management': 'M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6M9 10h.01M15 10h.01',
   admission: 'M12 3v18M3 12h18', enrollment: 'M4 5h16v14H4zM8 9h8M8 13h5', grading: 'M4 19V5l8-3 8 3v14l-8 3zM9 12l2 2 4-4',
-  monitoring: 'M4 19V5M8 15v4M12 9v10M16 12v7M20 5v14', 'document-request': 'M7 3h7l4 4v14H7zM14 3v5h5M10 12h5M10 16h5',
+  monitoring: 'M4 19V5M8 15v4M12 9v10M16 12v7M20 5v14',
+  'document-request': 'M7 3h7l4 4v14H7zM14 3v5h5M10 12h5M10 16h5',
   'event-attendance': 'M5 4h14v16H5zM8 2v4M16 2v4M8 10h8M8 14h5', appointments: 'M12 8v4l3 2M4 5h16v16H4z',
 }[name] || 'M4 5h16v14H4zM8 9h8M8 13h5')
 </script>

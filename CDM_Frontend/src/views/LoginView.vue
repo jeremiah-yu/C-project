@@ -3,6 +3,7 @@ import { reactive, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { dashboardForRole } from '../utils/roleDashboard'
+import { isStudentMobileApp, STUDENT_MOBILE_ONLY_MESSAGE } from '../utils/platform'
 import logoUrl from '../assets/styles/images/cdm_logo.png'
 
 const router = useRouter()
@@ -13,6 +14,7 @@ const errors = ref({})
 const formError = ref('')
 const isLoading = ref(false)
 const showPassword = ref(false)
+const isMobileStudentApp = isStudentMobileApp()
 
 const submit = async () => {
   if (isLoading.value) return
@@ -29,6 +31,10 @@ const submit = async () => {
     const destination = typeof route.query.redirect === 'string' ? route.query.redirect : dashboardForRole(authStore.currentRole)
     await router.replace(destination)
   } catch (error) {
+    if (error.code === 'STUDENT_MOBILE_ONLY') {
+      formError.value = STUDENT_MOBILE_ONLY_MESSAGE
+      return
+    }
     const backendErrors = error.response?.data?.errors
     errors.value = Object.fromEntries(
       Object.entries(backendErrors || {}).map(([field, messages]) => [field, messages[0]]),
@@ -42,10 +48,11 @@ const submit = async () => {
 
 <template>
   <section class="login-card" aria-labelledby="login-title">
-    <div class="brand"><img :src="logoUrl" alt="CDM logo"><span>CDM Portal<small>OneServe</small></span></div>
-    <h1 id="login-title">Sign in</h1>
-    <p class="intro">Use your campus account to continue.</p>
+    <div class="brand"><img :src="logoUrl" alt="CDM logo"><span>CDM Portal<small>{{ isMobileStudentApp ? 'Student App' : 'OneServe' }}</small></span></div>
+    <h1 id="login-title">{{ isMobileStudentApp ? 'Student sign in' : 'Sign in' }}</h1>
+    <p class="intro">{{ isMobileStudentApp ? 'Use your student account to continue.' : 'Use your campus account to continue.' }}</p>
     <p v-if="route.query.registered" class="registration-success" role="status">Account created. You can now sign in.</p>
+    <p v-if="route.query.mobileOnly" class="form-error" role="status">{{ STUDENT_MOBILE_ONLY_MESSAGE }}</p>
 
     <form novalidate @submit.prevent="submit">
       <p v-if="formError" class="form-error" role="alert">{{ formError }}</p>
@@ -63,8 +70,8 @@ const submit = async () => {
 
       <label class="remember"><input v-model="form.remember" type="checkbox" /> Remember me on this device</label>
       <button class="submit" type="submit" :disabled="isLoading">{{ isLoading ? 'Signing in…' : 'Sign in' }}</button>
-      <p class="register-link">Need an account? <RouterLink :to="{ name: 'register' }">Register as a Guest</RouterLink></p>
-      <p class="home-link"><RouterLink :to="{ name: 'landing' }">Back to campus overview</RouterLink></p>
+      <p v-if="!isMobileStudentApp" class="register-link">Need an account? <RouterLink :to="{ name: 'register' }">Register as a Guest</RouterLink></p>
+      <p v-if="!isMobileStudentApp" class="home-link"><RouterLink :to="{ name: 'landing' }">Back to campus overview</RouterLink></p>
     </form>
   </section>
 </template>

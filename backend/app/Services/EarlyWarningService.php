@@ -153,6 +153,161 @@ class EarlyWarningService
         ];
     }
 
+    /**
+     * Build a weekly guided study plan from declining / at-risk subjects.
+     *
+     * @param  array<string, mixed>  $assessment
+     * @return array<string, mixed>
+     */
+    public function generateStudyPlan(array $assessment): array
+    {
+        $focusSubjects = collect($assessment['subjects'] ?? [])
+            ->filter(function (array $subject) {
+                if (in_array($subject['risk_level'], ['high', 'moderate'], true)) {
+                    return true;
+                }
+
+                $prelim = $subject['periods']['Prelim'] ?? null;
+                $midterm = $subject['periods']['Midterm'] ?? null;
+
+                return $prelim !== null && $midterm !== null && ((float) $midterm < (float) $prelim - 2);
+            })
+            ->values();
+
+        if ($focusSubjects->isEmpty()) {
+            $focusSubjects = collect($assessment['subjects'] ?? [])->take(2)->values();
+        }
+
+        $sessions = [
+            ['day' => 'Monday', 'time' => '19:00–20:30', 'type' => 'Concept Review', 'focus' => 'Revisit lecture notes and mark unclear topics for targeted review.'],
+            ['day' => 'Tuesday', 'time' => '19:00–20:00', 'type' => 'Practice Drill', 'focus' => 'Solve practice problems and past quiz items under timed conditions.'],
+            ['day' => 'Wednesday', 'time' => '18:30–20:00', 'type' => 'Deep Work', 'focus' => 'Rebuild weak subtopics with examples, diagrams, or worked solutions.'],
+            ['day' => 'Thursday', 'time' => '19:00–20:00', 'type' => 'Lab / Output', 'focus' => 'Complete unfinished lab, coding, or assignment requirements.'],
+            ['day' => 'Friday', 'time' => '19:00–20:00', 'type' => 'Self-Assessment', 'focus' => 'Self-quiz and log mistakes with corrected solutions in a notebook.'],
+            ['day' => 'Saturday', 'time' => '09:00–10:30', 'type' => 'Consultation Prep', 'focus' => 'Prepare 3 clarifying questions and review with a peer or adviser.'],
+            ['day' => 'Sunday', 'time' => '16:00–17:00', 'type' => 'Weekly Review', 'focus' => 'Reflect on progress, adjust next week priorities, and rest strategically.'],
+        ];
+
+        $week = [];
+        $totalMinutes = 0;
+        foreach ($sessions as $i => $session) {
+            $subject = $focusSubjects[$i % max(1, $focusSubjects->count())] ?? null;
+            $priority = $subject['risk_level'] ?? 'low';
+            $minutes = $priority === 'high' ? 90 : ($priority === 'moderate' ? 75 : 60);
+            $totalMinutes += $minutes;
+
+            $week[] = [
+                'day' => $session['day'],
+                'time_slot' => $session['time'],
+                'session_type' => $session['type'],
+                'subject_code' => $subject['subject_code'] ?? 'General',
+                'subject_name' => $subject['subject_name'] ?? 'Academic recovery block',
+                'focus' => $session['focus'],
+                'objective' => $priority === 'high'
+                    ? 'Stabilize failing-risk performance before the next graded activity.'
+                    : 'Improve consistency and close topic gaps.',
+                'duration_minutes' => $minutes,
+                'priority' => $priority,
+            ];
+        }
+
+        $focusCodes = $focusSubjects->pluck('subject_code')->filter()->implode(', ');
+
+        return [
+            'student_id' => $assessment['student_id'],
+            'student_name' => $assessment['student_name'],
+            'student_number' => $assessment['student_number'],
+            'course_code' => $assessment['course_code'] ?? null,
+            'risk_level' => $assessment['risk_level'],
+            'risk_label' => $assessment['risk_label'] ?? $assessment['risk_level'],
+            'week_label' => 'Academic Recovery Week · '.now()->format('M d').'–'.now()->addDays(6)->format('M d, Y'),
+            'headline' => $focusSubjects->isEmpty()
+                ? 'Maintenance study plan designed to keep academic performance stable.'
+                : "Professional recovery plan focused on {$focusCodes}.",
+            'objective' => 'Reduce risk of failing by prioritizing weak subjects, protecting study consistency, and preparing for the next graded assessments.',
+            'total_hours' => round($totalMinutes / 60, 1),
+            'session_count' => count($week),
+            'focus_subjects' => $focusSubjects->map(fn (array $subject) => [
+                'subject_code' => $subject['subject_code'],
+                'subject_name' => $subject['subject_name'],
+                'risk_level' => $subject['risk_level'],
+                'risk_label' => $subject['risk_label'] ?? $subject['risk_level'],
+                'average_grade' => $subject['average_grade'],
+            ])->all(),
+            'week' => $week,
+            'generated_at' => now()->toIso8601String(),
+        ];
+    }
+
+    /**
+     * @return array{summary: array<string, int>, plans: list<array<string, mixed>>}
+     */
+    public function studyPlansOverview(?int $professorUserId = null): array
+    {
+        $overview = $this->overview($professorUserId);
+        $plans = collect($overview['students'])
+            ->map(fn (array $student) => $this->generateStudyPlan($student))
+            ->values()
+            ->all();
+
+        return [
+            'summary' => [
+                'total' => count($plans),
+                'with_focus_subjects' => collect($plans)->filter(fn (array $plan) => count($plan['focus_subjects']) > 0)->count(),
+            ],
+            'plans' => $plans,
+        ];
+    }
+
+    /**
+     * Build adviser alert inbox items from early-warning assessments.
+     *
+     * @return array{summary: array<string, int>, alerts: list<array<string, mixed>>}
+     */
+    public function adviserAlerts(?int $professorUserId = null): array
+    {
+        $overview = $this->overview($professorUserId);
+
+        $alerts = collect($overview['students'])
+            ->filter(fn (array $student) => in_array($student['risk_level'], ['high', 'moderate'], true)
+                || ($student['trend'] ?? '') === 'declining')
+            ->map(function (array $student) {
+                $severity = $student['risk_level'] === 'high' ? 'urgent' : 'attention';
+                $title = $student['risk_level'] === 'high'
+                    ? "High risk: {$student['student_name']}"
+                    : "Watch list: {$student['student_name']}";
+
+                return [
+                    'id' => 'alert-'.$student['student_id'],
+                    'student_id' => $student['student_id'],
+                    'student_name' => $student['student_name'],
+                    'student_number' => $student['student_number'],
+                    'course_code' => $student['course_code'],
+                    'severity' => $severity,
+                    'risk_level' => $student['risk_level'],
+                    'risk_label' => $student['risk_label'],
+                    'title' => $title,
+                    'message' => $student['headline'],
+                    'warnings' => $student['warnings'],
+                    'trend_label' => $student['trend_label'],
+                    'average_grade' => $student['average_grade'],
+                    'at_risk_subjects' => $student['at_risk_subjects'],
+                    'created_at' => now()->toIso8601String(),
+                ];
+            })
+            ->sortBy(fn (array $alert) => $alert['severity'] === 'urgent' ? 0 : 1)
+            ->values();
+
+        return [
+            'summary' => [
+                'urgent' => $alerts->where('severity', 'urgent')->count(),
+                'attention' => $alerts->where('severity', 'attention')->count(),
+                'total' => $alerts->count(),
+            ],
+            'alerts' => $alerts->all(),
+        ];
+    }
+
     private function baseStudentQuery(): Builder
     {
         return Student::query()
