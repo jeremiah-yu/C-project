@@ -5,8 +5,8 @@ import { useAuthStore } from '../../stores/authStore'
 import { ROLES } from '../../config/accessControl'
 import StudyPlansPanel from './components/StudyPlansPanel.vue'
 import AdviserAlertsPanel from './components/AdviserAlertsPanel.vue'
+import AiHelpChatbot from './components/AiHelpChatbot.vue'
 import {
-  askAiHelp,
   fetchAiStatus,
   fetchEarlyWarnings,
   fetchMyRisk,
@@ -19,12 +19,9 @@ const router = useRouter()
 const loading = ref(true)
 const error = ref('')
 const generating = ref(false)
-const askingAi = ref(false)
 const overview = ref(null)
 const selectedId = ref(null)
 const supportPlan = ref(null)
-const aiHelp = ref(null)
-const aiQuestion = ref('')
 const aiStatus = ref({ live_ai_configured: false, provider: 'cdm-coach', model: null })
 
 const isStudent = computed(() => authStore.currentRole === ROLES.STUDENT)
@@ -46,11 +43,7 @@ const activeTab = computed(() => {
 const students = computed(() => overview.value?.students || [])
 const summary = computed(() => overview.value?.summary || { high: 0, moderate: 0, low: 0, total: 0 })
 const selected = computed(() => students.value.find((item) => item.student_id === selectedId.value) || students.value[0] || null)
-const aiBadge = computed(() => {
-  if (aiHelp.value?.source === 'live-ai') return `Live AI · ${aiHelp.value.provider}`
-  if (aiStatus.value.live_ai_configured) return 'Live AI ready'
-  return 'CDM AI Coach'
-})
+const aiBadgeLive = computed(() => Boolean(aiStatus.value.live_ai_configured))
 
 const setTab = (tab) => {
   router.replace({ name: 'monitoring', query: tab === 'warnings' ? {} : { tab } })
@@ -59,8 +52,6 @@ const setTab = (tab) => {
 const openStudentFromAlert = (studentId) => {
   selectedId.value = studentId
   supportPlan.value = students.value.find((item) => item.student_id === studentId)?.support_plan || null
-  aiHelp.value = null
-  aiQuestion.value = ''
   setTab('warnings')
 }
 
@@ -78,7 +69,6 @@ const load = async () => {
   loading.value = true
   error.value = ''
   supportPlan.value = null
-  aiHelp.value = null
   try {
     const [monitoringData, status] = await Promise.all([
       isStudent.value ? fetchMyRisk() : fetchEarlyWarnings(),
@@ -98,8 +88,6 @@ const load = async () => {
 const selectStudent = (studentId) => {
   selectedId.value = studentId
   supportPlan.value = students.value.find((item) => item.student_id === studentId)?.support_plan || null
-  aiHelp.value = null
-  aiQuestion.value = ''
 }
 
 const onGenerate = async () => {
@@ -118,24 +106,8 @@ const onGenerate = async () => {
   }
 }
 
-const onAskAi = async () => {
-  if (!selected.value || askingAi.value) return
-  askingAi.value = true
-  error.value = ''
-  try {
-    aiHelp.value = await askAiHelp(selected.value.student_id, aiQuestion.value.trim())
-    if (aiHelp.value?.actions?.length) {
-      supportPlan.value = {
-        summary: aiHelp.value.summary,
-        actions: aiHelp.value.actions,
-        prevention_note: aiHelp.value.prevention_note,
-      }
-    }
-  } catch (err) {
-    error.value = err.response?.data?.message || 'Unable to get AI Help right now.'
-  } finally {
-    askingAi.value = false
-  }
+const onPlanFromChat = (plan) => {
+  if (plan?.actions?.length) supportPlan.value = plan
 }
 
 onMounted(load)
@@ -267,34 +239,6 @@ onMounted(load)
             </table>
           </div>
 
-          <div class="support-block ai-help-block">
-            <div class="support-head">
-              <div>
-                <h3>AI Help</h3>
-                <span class="ai-badge" :class="{ live: aiHelp?.source === 'live-ai' || aiStatus.live_ai_configured }">{{ aiBadge }}</span>
-              </div>
-              <button type="button" class="generate-btn" :disabled="askingAi" @click="onAskAi">
-                {{ askingAi ? 'Thinking…' : 'Ask AI Help' }}
-              </button>
-            </div>
-            <p class="empty">Ask how to recover grades, what to study first, or how to prevent failing.</p>
-            <label class="ai-label" for="ai-question">Your question</label>
-            <textarea
-              id="ai-question"
-              v-model="aiQuestion"
-              rows="3"
-              placeholder="Example: Paano ko maiiwasan mag-fail sa IT102 this week?"
-            />
-            <template v-if="aiHelp">
-              <p class="support-summary">{{ aiHelp.summary }}</p>
-              <p class="ai-advice">{{ aiHelp.advice }}</p>
-              <ol>
-                <li v-for="(step, index) in aiHelp.actions" :key="index">{{ step }}</li>
-              </ol>
-              <p class="support-note">{{ aiHelp.prevention_note }}</p>
-            </template>
-          </div>
-
           <div class="support-block">
             <div class="support-head">
               <h3>Help support plan</h3>
@@ -330,6 +274,15 @@ onMounted(load)
   <AdviserAlertsPanel
     v-if="activeTab === 'alerts' && canSeeAlerts"
     @open-student="openStudentFromAlert"
+  />
+
+  <AiHelpChatbot
+    :student-id="selected?.student_id || null"
+    :student-name="selected?.student_name || 'Student'"
+    :risk-label="selected?.risk_label || ''"
+    :live-configured="aiBadgeLive"
+    :provider="aiStatus.provider || 'gemini'"
+    @plan-from-chat="onPlanFromChat"
   />
 </template>
 
@@ -576,51 +529,6 @@ th {
 .support-block {
   border-top: 1px solid var(--color-border);
   padding-top: 16px;
-}
-
-.ai-help-block {
-  margin-top: 8px;
-  margin-bottom: 8px;
-  border: 1px solid rgba(16, 106, 46, 0.18);
-  border-radius: 14px;
-  background: linear-gradient(180deg, rgba(16, 106, 46, 0.05), transparent);
-  padding: 16px;
-}
-
-.ai-badge {
-  display: inline-flex;
-  margin-top: 6px;
-  border-radius: 999px;
-  background: #e8eef0;
-  color: var(--color-muted);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 4px 10px;
-}
-
-.ai-badge.live {
-  background: #dcf5e5;
-  color: #176434;
-}
-
-.ai-label {
-  display: block;
-  margin: 12px 0 6px;
-  font-weight: 700;
-}
-
-.ai-help-block textarea {
-  width: 100%;
-  resize: vertical;
-  margin-bottom: 12px;
-}
-
-.ai-advice {
-  white-space: pre-wrap;
-  color: var(--color-eerie-black);
-  line-height: 1.6;
 }
 
 .support-head {

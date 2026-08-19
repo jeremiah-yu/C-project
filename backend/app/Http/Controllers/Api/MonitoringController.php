@@ -190,11 +190,15 @@ class MonitoringController extends Controller
 
         $validated = $request->validate([
             'question' => ['nullable', 'string', 'max:1000'],
+            'messages' => ['nullable', 'array', 'max:20'],
+            'messages.*.role' => ['required_with:messages', 'string', 'in:user,assistant'],
+            'messages.*.content' => ['required_with:messages', 'string', 'max:2000'],
         ]);
 
         $help = $this->monitoringAiHelpService->generateHelp(
             $student,
             $validated['question'] ?? null,
+            $validated['messages'] ?? [],
         );
 
         return response()->json([

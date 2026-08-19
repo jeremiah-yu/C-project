@@ -35,9 +35,10 @@ export const fetchAiStatus = async () => {
   return data.data
 }
 
-export const askAiHelp = async (studentId, question = '') => {
+export const askAiHelp = async (studentId, question = '', messages = []) => {
   const { data } = await apiClient.post(`/monitoring/students/${studentId}/ai-help`, {
     question: question || null,
+    messages,
   })
   return data.data
 }
